@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cham Lobby</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #111827, #0b1120 45%, #020617 100%);
+        color: #e2e8f0;
+        margin: 0;
+        padding: 2rem;
+      }
+      .card {
+        max-width: 980px;
+        margin: 0 auto;
+        background: rgba(15, 23, 42, 0.9);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 30px 60px rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        backdrop-filter: blur(18px);
+      }
+      h1,
+      h2,
+      h3 {
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #cbd5f5;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      textarea {
+        resize: none;
+        min-height: 90px;
+      }
+      button {
+        margin-top: 1rem;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        color: #0f172a;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      button.secondary {
+        background: #1f2937;
+        color: #e2e8f0;
+      }
+      button:disabled {
+        background: #475569;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(56, 189, 248, 0.2);
+      }
+      .status {
+        margin-top: 1rem;
+        font-size: 0.95rem;
+      }
+      .error {
+        color: #f87171;
+      }
+      .hidden {
+        display: none;
+      }
+      .grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .panel {
+        background: #111827;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      li {
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #1f2937;
+      }
+      .chat {
+        margin-top: 2rem;
+      }
+      .chat-log {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+      }
+      .chat-bubble {
+        background: #1f2937;
+        border-radius: 16px;
+        padding: 0.6rem 0.9rem;
+        max-width: 80%;
+        width: fit-content;
+        animation: fadeIn 0.25s ease;
+      }
+      .chat-bubble.admin {
+        background: #1d4ed8;
+      }
+      .chat-bubble.system {
+        background: #334155;
+        font-style: italic;
+      }
+      .chat-meta {
+        font-size: 0.75rem;
+        color: #cbd5f5;
+        margin-bottom: 0.2rem;
+      }
+      .chat-message {
+        white-space: pre-wrap;
+      }
+      .chat-input {
+        margin-top: 1rem;
+      }
+      .logs {
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+        font-size: 0.9rem;
+        color: #cbd5f5;
+      }
+      .badge {
+        display: inline-block;
+        background: #2563eb;
+        color: #e2e8f0;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        margin-left: 0.4rem;
+      }
+      .music-controls {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .music-row {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+      .playlist-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #1f2937;
+      }
+      .playlist-actions button {
+        margin: 0;
+        width: auto;
+        padding: 0.3rem 0.6rem;
+        border-radius: 8px;
+      }
+      .slider {
+        width: 100%;
+      }
+      .timeline {
+        display: grid;
+        gap: 0.5rem;
+      }
+      .timeline-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #94a3b8;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <section id="login-screen">
+        <h1>Cham Lobby</h1>
+        <p>Pick how you want to join.</p>
+        <div class="grid">
+          <div class="panel">
+            <h3>User login</h3>
+            <label for="user-name">Your name</label>
+            <input id="user-name" type="text" placeholder="Enter a name" />
+            <button id="join-user">Join as user</button>
+          </div>
+          <div class="panel">
+            <h3>Admin login</h3>
+            <label for="admin-name">Admin name</label>
+            <input id="admin-name" type="text" placeholder="Admin display name" />
+            <label for="admin-password">Admin password</label>
+            <input id="admin-password" type="password" placeholder="Password" />
+            <button id="join-admin" class="secondary">Join as admin</button>
+          </div>
+        </div>
+        <div class="status" id="status">Not connected.</div>
+      </section>
+
+      <section id="lobby-screen" class="hidden">
+        <h2>Lobby <span id="role-badge" class="badge hidden"></span></h2>
+        <div class="grid">
+          <div class="panel">
+            <h3>Online users</h3>
+            <ul id="user-list"></ul>
+          </div>
+          <div id="admin-panel" class="panel hidden">
+            <h3>Admin logs</h3>
+            <div class="logs" id="log-list"></div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top: 1.5rem">
+          <div class="panel">
+            <h3>Music player</h3>
+            <div class="music-controls" id="music-controls">
+              <div class="music-row">
+                <input id="track-url" type="text" placeholder="Paste .mp3 link" />
+                <button id="add-track" class="secondary">Add</button>
+              </div>
+              <label for="track-title">Track title (optional)</label>
+              <input id="track-title" type="text" placeholder="Name shown in playlist" />
+              <div class="music-row">
+                <button id="play-track">Play</button>
+                <button id="pause-track" class="secondary">Pause</button>
+              </div>
+              <div class="timeline">
+                <input id="timeline" type="range" min="0" max="0" value="0" class="slider" />
+                <div class="timeline-labels">
+                  <span id="current-time">0:00</span>
+                  <span id="duration">0:00</span>
+                </div>
+              </div>
+              <div>
+                <h4>Playlist</h4>
+                <div id="playlist"></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel chat">
+            <h3>Chat</h3>
+            <div class="chat-log" id="chat-log"></div>
+            <div class="chat-input">
+              <label for="chat-message">Message</label>
+              <textarea
+                id="chat-message"
+                placeholder="Write a message... (Shift + Enter for new line)"
+              ></textarea>
+              <button id="send-message">Send message</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <audio id="audio-player"></audio>
+
+    <script>
+      const joinUserButton = document.getElementById("join-user");
+      const joinAdminButton = document.getElementById("join-admin");
+      const statusEl = document.getElementById("status");
+      const loginScreen = document.getElementById("login-screen");
+      const lobbyScreen = document.getElementById("lobby-screen");
+      const userList = document.getElementById("user-list");
+      const adminPanel = document.getElementById("admin-panel");
+      const logList = document.getElementById("log-list");
+      const chatLog = document.getElementById("chat-log");
+      const chatMessage = document.getElementById("chat-message");
+      const sendMessageButton = document.getElementById("send-message");
+      const roleBadge = document.getElementById("role-badge");
+      const trackUrlInput = document.getElementById("track-url");
+      const trackTitleInput = document.getElementById("track-title");
+      const addTrackButton = document.getElementById("add-track");
+      const playButton = document.getElementById("play-track");
+      const pauseButton = document.getElementById("pause-track");
+      const playlistEl = document.getElementById("playlist");
+      const timeline = document.getElementById("timeline");
+      const currentTimeLabel = document.getElementById("current-time");
+      const durationLabel = document.getElementById("duration");
+      const audioPlayer = document.getElementById("audio-player");
+
+      let socket;
+      let currentRole = "user";
+      let musicState = {
+        queue: [],
+        current_track_id: null,
+        is_playing: false,
+        position: 0,
+        server_time: 0,
+      };
+      let syncTimer;
+
+      function setStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle("error", isError);
+      }
+
+      function renderUsers(users) {
+        userList.innerHTML = "";
+        users.forEach((user) => {
+          const li = document.createElement("li");
+          const roleLabel = user.role === "admin" ? " (admin)" : "";
+          li.textContent = `${user.name}${roleLabel}`;
+          userList.appendChild(li);
+        });
+      }
+
+      function renderLogs(logs) {
+        logList.innerHTML = "";
+        logs.forEach((entry) => {
+          const line = document.createElement("div");
+          line.textContent = `${entry.timestamp} - ${entry.message}`;
+          logList.appendChild(line);
+        });
+        logList.scrollTop = logList.scrollHeight;
+      }
+
+      function appendChatMessage(payload) {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("chat-bubble");
+        if (payload.role === "admin") {
+          wrapper.classList.add("admin");
+        }
+        if (payload.role === "system") {
+          wrapper.classList.add("system");
+        }
+
+        const meta = document.createElement("div");
+        meta.classList.add("chat-meta");
+        meta.textContent = `${payload.name} • ${payload.timestamp}`;
+
+        const message = document.createElement("div");
+        message.classList.add("chat-message");
+        message.textContent = payload.message;
+
+        wrapper.appendChild(meta);
+        wrapper.appendChild(message);
+        chatLog.appendChild(wrapper);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      function openLobby(role, users, logs) {
+        currentRole = role;
+        loginScreen.classList.add("hidden");
+        lobbyScreen.classList.remove("hidden");
+        roleBadge.textContent = role === "admin" ? "Admin" : "User";
+        roleBadge.classList.remove("hidden");
+        renderUsers(users || []);
+        if (role === "admin") {
+          adminPanel.classList.remove("hidden");
+          renderLogs(logs || []);
+        }
+        applyRolePermissions();
+      }
+
+      function applyRolePermissions() {
+        const isAdmin = currentRole === "admin";
+        trackUrlInput.disabled = !isAdmin;
+        trackTitleInput.disabled = !isAdmin;
+        addTrackButton.disabled = !isAdmin;
+        playButton.disabled = !isAdmin;
+        pauseButton.disabled = !isAdmin;
+        timeline.disabled = !isAdmin;
+      }
+
+      function connect(payload) {
+        setStatus("Connecting...");
+        joinUserButton.disabled = true;
+        joinAdminButton.disabled = true;
+
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const socketUrl = `${protocol}://${window.location.host}/ws`;
+        socket = new WebSocket(socketUrl);
+
+        socket.addEventListener("open", () => {
+          socket.send(JSON.stringify(payload));
+        });
+
+        socket.addEventListener("message", (event) => {
+          const messagePayload = JSON.parse(event.data);
+          if (messagePayload.type === "error") {
+            setStatus(messagePayload.message, true);
+            joinUserButton.disabled = false;
+            joinAdminButton.disabled = false;
+            socket.close();
+            return;
+          }
+          if (messagePayload.type === "join_ack") {
+            setStatus("Connected!", false);
+            openLobby(messagePayload.role, messagePayload.users, messagePayload.logs);
+            updateMusicState(messagePayload);
+          }
+          if (messagePayload.type === "users") {
+            renderUsers(messagePayload.users || []);
+          }
+          if (messagePayload.type === "logs" && currentRole === "admin") {
+            renderLogs(messagePayload.logs || []);
+          }
+          if (messagePayload.type === "chat") {
+            appendChatMessage(messagePayload);
+          }
+          if (messagePayload.type === "music_state") {
+            updateMusicState(messagePayload);
+          }
+        });
+
+        socket.addEventListener("close", () => {
+          setStatus("Disconnected from server.", true);
+          stopSyncTimer();
+        });
+
+        socket.addEventListener("error", () => {
+          setStatus("Connection error.", true);
+        });
+      }
+
+      function handleUserJoin() {
+        const name = document.getElementById("user-name").value.trim();
+        if (!name) {
+          setStatus("Please enter a name.", true);
+          return;
+        }
+        connect({ type: "join", name, role: "user" });
+      }
+
+      function handleAdminJoin() {
+        const name = document.getElementById("admin-name").value.trim();
+        const password = document.getElementById("admin-password").value.trim();
+        if (!name) {
+          setStatus("Please enter an admin name.", true);
+          return;
+        }
+        if (!password) {
+          setStatus("Please enter the admin password.", true);
+          return;
+        }
+        connect({ type: "join", name, role: "admin", password });
+      }
+
+      function sendChatMessage() {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          setStatus("Not connected.", true);
+          return;
+        }
+        const message = chatMessage.value;
+        if (!message.trim()) {
+          return;
+        }
+        socket.send(JSON.stringify({ type: "chat", message }));
+        chatMessage.value = "";
+      }
+
+      function sendMusicCommand(payload) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          setStatus("Not connected.", true);
+          return;
+        }
+        socket.send(JSON.stringify(payload));
+      }
+
+      function formatTime(seconds) {
+        const safe = Math.max(0, Math.floor(seconds));
+        const mins = Math.floor(safe / 60);
+        const secs = safe % 60;
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+      }
+
+      function renderPlaylist() {
+        playlistEl.innerHTML = "";
+        musicState.queue.forEach((track) => {
+          const row = document.createElement("div");
+          row.classList.add("playlist-item");
+          const name = document.createElement("span");
+          name.textContent = track.title;
+          row.appendChild(name);
+
+          const actions = document.createElement("div");
+          actions.classList.add("playlist-actions");
+
+          const selectButton = document.createElement("button");
+          selectButton.textContent = track.track_id === musicState.current_track_id ? "Playing" : "Select";
+          selectButton.classList.add("secondary");
+          selectButton.disabled = currentRole !== "admin";
+          selectButton.addEventListener("click", () => {
+            sendMusicCommand({ type: "music_select", track_id: track.track_id });
+          });
+          actions.appendChild(selectButton);
+
+          if (currentRole === "admin") {
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () => {
+              sendMusicCommand({ type: "music_delete", track_id: track.track_id });
+            });
+            actions.appendChild(deleteButton);
+          }
+
+          row.appendChild(actions);
+          playlistEl.appendChild(row);
+        });
+      }
+
+      function updateAudioPlayer() {
+        const activeTrack = musicState.queue.find(
+          (track) => track.track_id === musicState.current_track_id
+        );
+        if (!activeTrack) {
+          audioPlayer.pause();
+          audioPlayer.removeAttribute("src");
+          audioPlayer.load();
+          timeline.max = 0;
+          timeline.value = 0;
+          currentTimeLabel.textContent = "0:00";
+          durationLabel.textContent = "0:00";
+          return;
+        }
+
+        if (audioPlayer.src !== activeTrack.url) {
+          audioPlayer.src = activeTrack.url;
+        }
+
+        const desiredPosition = musicState.position || 0;
+        if (Number.isFinite(desiredPosition)) {
+          audioPlayer.currentTime = desiredPosition;
+        }
+
+        if (musicState.is_playing) {
+          const playPromise = audioPlayer.play();
+          if (playPromise) {
+            playPromise.catch(() => {});
+          }
+        } else {
+          audioPlayer.pause();
+        }
+      }
+
+      function updateTimelineUI() {
+        const duration = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
+        timeline.max = duration ? duration : 0;
+        durationLabel.textContent = formatTime(duration);
+
+        if (musicState.is_playing) {
+          timeline.value = audioPlayer.currentTime;
+          currentTimeLabel.textContent = formatTime(audioPlayer.currentTime);
+        } else {
+          timeline.value = musicState.position || 0;
+          currentTimeLabel.textContent = formatTime(musicState.position || 0);
+        }
+      }
+
+      function updateMusicState(payload) {
+        musicState = {
+          queue: payload.queue || [],
+          current_track_id: payload.current_track_id,
+          is_playing: payload.is_playing,
+          position: payload.position || 0,
+          server_time: payload.server_time || 0,
+        };
+        renderPlaylist();
+        updateAudioPlayer();
+        updateTimelineUI();
+        startSyncTimer();
+      }
+
+      function startSyncTimer() {
+        stopSyncTimer();
+        syncTimer = setInterval(() => {
+          updateTimelineUI();
+        }, 500);
+      }
+
+      function stopSyncTimer() {
+        if (syncTimer) {
+          clearInterval(syncTimer);
+          syncTimer = null;
+        }
+      }
+
+      joinUserButton.addEventListener("click", handleUserJoin);
+      joinAdminButton.addEventListener("click", handleAdminJoin);
+      sendMessageButton.addEventListener("click", sendChatMessage);
+      chatMessage.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendChatMessage();
+        }
+      });
+
+      addTrackButton.addEventListener("click", () => {
+        const url = trackUrlInput.value.trim();
+        const title = trackTitleInput.value.trim();
+        if (!url) {
+          setStatus("Please provide an mp3 link.", true);
+          return;
+        }
+        sendMusicCommand({ type: "music_add", url, title });
+        trackUrlInput.value = "";
+        trackTitleInput.value = "";
+      });
+
+      playButton.addEventListener("click", () => {
+        sendMusicCommand({ type: "music_play" });
+      });
+
+      pauseButton.addEventListener("click", () => {
+        sendMusicCommand({ type: "music_pause" });
+      });
+
+      timeline.addEventListener("input", () => {
+        currentTimeLabel.textContent = formatTime(timeline.value);
+      });
+
+      timeline.addEventListener("change", () => {
+        sendMusicCommand({ type: "music_seek", position: timeline.value });
+      });
+
+      audioPlayer.addEventListener("loadedmetadata", updateTimelineUI);
+      audioPlayer.addEventListener("timeupdate", updateTimelineUI);
+    </script>
+  </body>
+</html>
