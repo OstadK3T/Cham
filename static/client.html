@@ -19,7 +19,7 @@
         padding: 2rem;
       }
       .card {
-        max-width: 1200px;
+        max-width: 1280px;
         margin: 0 auto;
         background: rgba(15, 23, 42, 0.9);
         border-radius: 20px;
@@ -87,18 +87,47 @@
         color: #f87171;
       }
       .hidden {
-        display: none;
+        display: none !important;
       }
       .grid {
         display: grid;
         gap: 1.5rem;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       }
+      .layout-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: 1.1fr 1fr;
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
       .panel {
         background: #111827;
         border-radius: 16px;
         padding: 1.5rem;
         border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+      }
+      .drawer-toggle {
+        background: none;
+        border: none;
+        color: #cbd5f5;
+        font-size: 1.1rem;
+        padding: 0;
+        margin: 0;
+        width: auto;
+      }
+      .drawer-content {
+        margin-top: 1rem;
+      }
+      .drawer.collapsed .drawer-content {
+        display: none;
       }
       ul {
         list-style: none;
@@ -110,13 +139,13 @@
         border-bottom: 1px solid #1f2937;
       }
       .chat {
-        margin-top: 2rem;
+        margin-top: 0;
       }
       .chat-log {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
-        max-height: 320px;
+        max-height: 420px;
         overflow-y: auto;
         padding-right: 0.5rem;
       }
@@ -124,9 +153,11 @@
         background: #1f2937;
         border-radius: 16px;
         padding: 0.6rem 0.9rem;
-        max-width: 80%;
+        max-width: 100%;
         width: fit-content;
         animation: fadeIn 0.25s ease;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
       .chat-bubble.admin {
         background: #1d4ed8;
@@ -135,9 +166,18 @@
         background: #334155;
         font-style: italic;
       }
+      .chat-bubble.reply-target {
+        border: 1px solid #f59e0b;
+        box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+      }
       .chat-meta {
         font-size: 0.75rem;
         color: #cbd5f5;
+        margin-bottom: 0.2rem;
+      }
+      .chat-reply {
+        font-size: 0.7rem;
+        color: #fbbf24;
         margin-bottom: 0.2rem;
       }
       .chat-message {
@@ -145,6 +185,32 @@
       }
       .chat-input {
         margin-top: 1rem;
+      }
+      .reply-banner {
+        background: rgba(59, 130, 246, 0.15);
+        border-radius: 12px;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .reply-banner button {
+        width: auto;
+        margin: 0;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+      }
+      .reply-button {
+        border: none;
+        background: #0f172a;
+        color: #cbd5f5;
+        border-radius: 999px;
+        padding: 0.15rem 0.45rem;
+        margin-left: 0.35rem;
+        cursor: pointer;
+        font-size: 0.7rem;
       }
       .logs {
         max-height: 220px;
@@ -223,6 +289,7 @@
         align-items: center;
         gap: 0.5rem;
         font-size: 0.9rem;
+        cursor: context-menu;
       }
       .status-dot {
         width: 10px;
@@ -245,6 +312,26 @@
       }
       .ptt-button.active {
         box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+      }
+      .popup {
+        position: fixed;
+        z-index: 40;
+        background: rgba(15, 23, 42, 0.85);
+        border-radius: 16px;
+        padding: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.4);
+        min-width: 200px;
+        animation: fadeIn 0.2s ease;
+      }
+      .popup h4 {
+        margin: 0 0 0.5rem;
+      }
+      .popup .playlist-mini {
+        max-height: 140px;
+        overflow-y: auto;
+        font-size: 0.8rem;
       }
       @keyframes fadeIn {
         from {
@@ -285,61 +372,90 @@
       <section id="lobby-screen" class="hidden">
         <h2>Lobby <span id="role-badge" class="badge hidden"></span></h2>
         <div class="grid">
-          <div class="panel">
-            <h3>Online users</h3>
-            <ul id="user-list"></ul>
-          </div>
-          <div id="admin-panel" class="panel hidden">
-            <h3>Admin logs</h3>
-            <div class="logs" id="log-list"></div>
-          </div>
-        </div>
-
-        <div class="grid" style="margin-top: 1.5rem">
-          <div class="panel">
-            <h3>Voice channels</h3>
-            <div class="channel-list" id="channel-list"></div>
-            <button id="leave-channel" class="secondary">Leave channel</button>
-          </div>
-          <div class="panel">
-            <h3>Push to talk</h3>
-            <div class="ptt-row">
-              <label for="ptt-key">PTT key binding</label>
-              <select id="ptt-key">
-                <option value="v">V</option>
-                <option value="b">B</option>
-                <option value="space">Space</option>
-              </select>
-              <button id="ptt-button" class="ptt-button">Hold to talk</button>
+          <div class="panel drawer" id="users-panel">
+            <div class="drawer-header">
+              <h3>Online users</h3>
+              <button class="drawer-toggle" data-target="users-panel">▾</button>
             </div>
-            <div class="ptt-row" style="margin-top: 1rem">
-              <h4>Microphone</h4>
-              <button id="mic-permission" class="secondary">Enable microphone</button>
-              <label for="mic-select">Input device</label>
-              <select id="mic-select"></select>
+            <div class="drawer-content">
+              <ul id="user-list"></ul>
+            </div>
+          </div>
+          <div id="admin-panel" class="panel drawer hidden">
+            <div class="drawer-header">
+              <h3>Admin logs</h3>
+              <button class="drawer-toggle" data-target="admin-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="logs" id="log-list"></div>
             </div>
           </div>
         </div>
 
-        <div class="grid" style="margin-top: 1.5rem">
-          <div class="panel" id="radio-panel">
-            <h3>Radio channel</h3>
-            <div class="timeline">
-              <input id="timeline" type="range" min="0" max="0" value="0" class="slider" disabled />
-              <div class="timeline-labels">
-                <span id="current-time">0:00</span>
-                <span id="duration">0:00</span>
+        <div class="layout-grid" style="margin-top: 1.5rem">
+          <div class="panel drawer" id="voice-panel">
+            <div class="drawer-header">
+              <h3>Voice channels</h3>
+              <button class="drawer-toggle" data-target="voice-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="channel-list" id="channel-list"></div>
+              <button id="leave-channel" class="secondary">Leave channel</button>
+            </div>
+          </div>
+          <div class="panel drawer" id="ptt-panel">
+            <div class="drawer-header">
+              <h3>Push to talk</h3>
+              <button class="drawer-toggle" data-target="ptt-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="ptt-row">
+                <label for="ptt-key">PTT key binding</label>
+                <select id="ptt-key">
+                  <option value="v">V</option>
+                  <option value="b">B</option>
+                  <option value="space">Space</option>
+                </select>
+                <button id="ptt-button" class="ptt-button">Hold to talk</button>
+              </div>
+              <div class="ptt-row" style="margin-top: 1rem">
+                <h4>Microphone</h4>
+                <button id="mic-permission" class="secondary">Enable microphone</button>
+                <label for="mic-select">Input device</label>
+                <select id="mic-select"></select>
               </div>
             </div>
-            <div style="margin-top: 1rem">
-              <h4>Playlist</h4>
-              <div id="playlist"></div>
+          </div>
+        </div>
+
+        <div class="layout-grid" style="margin-top: 1.5rem">
+          <div class="panel drawer hidden" id="radio-panel">
+            <div class="drawer-header">
+              <h3>Radio channel</h3>
+              <button class="drawer-toggle" data-target="radio-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="timeline">
+                <input id="timeline" type="range" min="0" max="0" value="0" class="slider" />
+                <div class="timeline-labels">
+                  <span id="current-time">0:00</span>
+                  <span id="duration">0:00</span>
+                </div>
+              </div>
+              <div style="margin-top: 1rem">
+                <h4>Playlist</h4>
+                <div id="playlist"></div>
+              </div>
             </div>
           </div>
-          <div class="panel chat">
+          <div class="panel chat span-2">
             <h3>Chat</h3>
             <div class="chat-log" id="chat-log"></div>
             <div class="chat-input">
+              <div class="reply-banner hidden" id="reply-banner">
+                <span id="reply-text"></span>
+                <button id="reply-cancel" class="secondary">Clear</button>
+              </div>
               <label for="chat-message">Message</label>
               <textarea
                 id="chat-message"
@@ -350,25 +466,56 @@
           </div>
         </div>
 
-        <div id="music-admin" class="panel hidden" style="margin-top: 1.5rem">
-          <h3>Radio admin controls</h3>
-          <div class="music-controls" id="music-controls">
-            <div class="music-row">
-              <input id="track-url" type="text" placeholder="Paste .mp3 link" />
-              <button id="add-track" class="secondary">Add</button>
+        <div id="music-admin" class="panel drawer hidden" style="margin-top: 1.5rem">
+          <div class="drawer-header">
+            <h3>Radio admin controls</h3>
+            <button class="drawer-toggle" data-target="music-admin">▾</button>
+          </div>
+          <div class="drawer-content">
+            <div class="music-controls" id="music-controls">
+              <div class="music-row">
+                <input id="track-url" type="text" placeholder="Paste .mp3 link" />
+                <button id="add-track" class="secondary">Add</button>
+              </div>
+              <label for="track-title">Track title (optional)</label>
+              <input id="track-title" type="text" placeholder="Name shown in playlist" />
+              <div class="music-row">
+                <button id="play-track">Play</button>
+                <button id="pause-track" class="secondary">Pause</button>
+              </div>
             </div>
-            <label for="track-title">Track title (optional)</label>
-            <input id="track-title" type="text" placeholder="Name shown in playlist" />
-            <div class="music-row">
-              <button id="play-track">Play</button>
-              <button id="pause-track" class="secondary">Pause</button>
-            </div>
+          </div>
+        </div>
+
+        <div class="panel drawer" id="security-panel" style="margin-top: 1.5rem">
+          <div class="drawer-header">
+            <h3>Security</h3>
+            <button class="drawer-toggle" data-target="security-panel">▾</button>
+          </div>
+          <div class="drawer-content">
+            <label for="encryption-key">End-to-end chat passphrase</label>
+            <input id="encryption-key" type="password" placeholder="Shared secret" />
+            <button id="enable-encryption" class="secondary">Enable encryption</button>
+            <div class="status" id="encryption-status">Chat encryption is off.</div>
+            <p style="font-size: 0.85rem; color: #94a3b8;">
+              Voice chat uses WebRTC (DTLS-SRTP) which encrypts media streams end-to-end by default.
+            </p>
           </div>
         </div>
       </section>
     </div>
 
     <audio id="audio-player"></audio>
+    <div id="volume-popup" class="popup hidden">
+      <h4>Voice volume</h4>
+      <input id="volume-slider" type="range" min="0" max="200" value="100" />
+    </div>
+    <div id="radio-popup" class="popup hidden">
+      <h4>Radio bot</h4>
+      <div id="radio-now-playing"></div>
+      <div id="radio-remaining"></div>
+      <div class="playlist-mini" id="radio-playlist"></div>
+    </div>
 
     <script>
       const joinUserButton = document.getElementById("join-user");
@@ -400,6 +547,19 @@
       const micPermissionButton = document.getElementById("mic-permission");
       const micSelect = document.getElementById("mic-select");
       const musicAdminPanel = document.getElementById("music-admin");
+      const radioPanel = document.getElementById("radio-panel");
+      const replyBanner = document.getElementById("reply-banner");
+      const replyText = document.getElementById("reply-text");
+      const replyCancel = document.getElementById("reply-cancel");
+      const encryptionInput = document.getElementById("encryption-key");
+      const enableEncryptionButton = document.getElementById("enable-encryption");
+      const encryptionStatus = document.getElementById("encryption-status");
+      const volumePopup = document.getElementById("volume-popup");
+      const volumeSlider = document.getElementById("volume-slider");
+      const radioPopup = document.getElementById("radio-popup");
+      const radioNowPlaying = document.getElementById("radio-now-playing");
+      const radioRemaining = document.getElementById("radio-remaining");
+      const radioPlaylist = document.getElementById("radio-playlist");
 
       const voiceChannels = ["Voice 1", "Voice 2", "Voice 3", "Voice 4", "Radio Channel"];
 
@@ -412,6 +572,8 @@
       let localStream = null;
       let peerConnections = new Map();
       let remoteAudio = new Map();
+      let volumeMap = new Map();
+      let activeVolumeTarget = null;
 
       let musicState = {
         queue: [],
@@ -421,6 +583,8 @@
         server_time: 0,
       };
       let syncTimer;
+      let replyToUser = null;
+      let encryptionKey = null;
 
       function setStatus(message, isError = false) {
         statusEl.textContent = message;
@@ -447,6 +611,17 @@
         logList.scrollTop = logList.scrollHeight;
       }
 
+      function setReplyTarget(userName) {
+        replyToUser = userName;
+        replyText.textContent = `Replying to ${userName}`;
+        replyBanner.classList.remove("hidden");
+      }
+
+      function clearReplyTarget() {
+        replyToUser = null;
+        replyBanner.classList.add("hidden");
+      }
+
       function appendChatMessage(payload) {
         const wrapper = document.createElement("div");
         wrapper.classList.add("chat-bubble");
@@ -456,17 +631,41 @@
         if (payload.role === "system") {
           wrapper.classList.add("system");
         }
+        if (payload.reply_to && payload.reply_to === currentUserName) {
+          wrapper.classList.add("reply-target");
+        }
 
         const meta = document.createElement("div");
         meta.classList.add("chat-meta");
         meta.textContent = `${payload.name} • ${payload.timestamp}`;
 
+        const replyLine = document.createElement("div");
+        replyLine.classList.add("chat-reply");
+        if (payload.reply_to) {
+          if (payload.reply_to === currentUserName) {
+            replyLine.textContent = `${payload.name} replied you`;
+          } else {
+            replyLine.textContent = `Replying to ${payload.reply_to}`;
+          }
+        }
+
         const message = document.createElement("div");
         message.classList.add("chat-message");
         message.textContent = payload.message;
 
+        const actions = document.createElement("div");
+        const replyButton = document.createElement("button");
+        replyButton.classList.add("reply-button");
+        replyButton.textContent = "↩";
+        replyButton.addEventListener("click", () => setReplyTarget(payload.name));
+        actions.appendChild(replyButton);
+
         wrapper.appendChild(meta);
+        if (payload.reply_to) {
+          wrapper.appendChild(replyLine);
+        }
         wrapper.appendChild(message);
+        wrapper.appendChild(actions);
         chatLog.appendChild(wrapper);
         chatLog.scrollTop = chatLog.scrollHeight;
       }
@@ -481,7 +680,14 @@
         if (role === "admin") {
           adminPanel.classList.remove("hidden");
           musicAdminPanel.classList.remove("hidden");
+          radioPanel.classList.remove("hidden");
+          timeline.disabled = false;
           renderLogs(logs || []);
+        } else {
+          adminPanel.classList.add("hidden");
+          musicAdminPanel.classList.add("hidden");
+          radioPanel.classList.add("hidden");
+          timeline.disabled = true;
         }
       }
 
@@ -498,7 +704,7 @@
           socket.send(JSON.stringify(payload));
         });
 
-        socket.addEventListener("message", (event) => {
+        socket.addEventListener("message", async (event) => {
           const messagePayload = JSON.parse(event.data);
           if (messagePayload.type === "error") {
             setStatus(messagePayload.message, true);
@@ -520,7 +726,7 @@
             renderLogs(messagePayload.logs || []);
           }
           if (messagePayload.type === "chat") {
-            appendChatMessage(messagePayload);
+            await handleIncomingChat(messagePayload);
           }
           if (messagePayload.type === "music_state") {
             updateMusicState(messagePayload);
@@ -575,7 +781,7 @@
         connect({ type: "join", name, role: "admin", password });
       }
 
-      function sendChatMessage() {
+      async function sendChatMessage() {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
           setStatus("Not connected.", true);
           return;
@@ -584,8 +790,23 @@
         if (!message.trim()) {
           return;
         }
-        socket.send(JSON.stringify({ type: "chat", message }));
+
+        if (encryptionKey) {
+          const encrypted = await encryptMessage(message);
+          socket.send(
+            JSON.stringify({
+              type: "chat",
+              encrypted: true,
+              ciphertext: encrypted.ciphertext,
+              iv: encrypted.iv,
+              reply_to: replyToUser,
+            })
+          );
+        } else {
+          socket.send(JSON.stringify({ type: "chat", message, reply_to: replyToUser }));
+        }
         chatMessage.value = "";
+        clearReplyTarget();
       }
 
       function sendMusicCommand(payload) {
@@ -624,6 +845,14 @@
           actions.classList.add("playlist-actions");
 
           if (currentRole === "admin") {
+            const selectButton = document.createElement("button");
+            selectButton.textContent = track.track_id === musicState.current_track_id ? "Selected" : "Select";
+            selectButton.classList.add("secondary");
+            selectButton.addEventListener("click", () => {
+              sendMusicCommand({ type: "music_select", track_id: track.track_id });
+            });
+            actions.appendChild(selectButton);
+
             const deleteButton = document.createElement("button");
             deleteButton.textContent = "Delete";
             deleteButton.addEventListener("click", () => {
@@ -758,6 +987,7 @@
           if (channelName === "Radio Channel") {
             const bot = document.createElement("div");
             bot.classList.add("user-pill");
+            bot.dataset.radio = "true";
             const dot = document.createElement("span");
             dot.classList.add("status-dot", "radio");
             bot.appendChild(dot);
@@ -769,6 +999,7 @@
           users.forEach((userName) => {
             const row = document.createElement("div");
             row.classList.add("user-pill");
+            row.dataset.user = userName;
             const dot = document.createElement("span");
             dot.classList.add("status-dot");
             if (talking[userName]) {
@@ -784,9 +1015,10 @@
           channelList.appendChild(card);
         });
 
-        currentChannel = Object.keys(channels).find((channel) =>
-          (channels[channel] || []).includes(currentUserName)
-        ) || null;
+        currentChannel =
+          Object.keys(channels).find((channel) =>
+            (channels[channel] || []).includes(currentUserName)
+          ) || null;
 
         updateAudioPlayer();
         syncPeers(channels);
@@ -900,6 +1132,8 @@
           const audio = document.createElement("audio");
           audio.autoplay = true;
           audio.srcObject = event.streams[0];
+          const volume = volumeMap.get(peerName) ?? 100;
+          audio.volume = Math.min(volume, 200) / 100;
           remoteAudio.set(peerName, audio);
         };
 
@@ -985,9 +1219,120 @@
         stopTalking();
       }
 
+      function showPopup(popup, x, y) {
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+        popup.classList.remove("hidden");
+      }
+
+      function hidePopup(popup) {
+        popup.classList.add("hidden");
+      }
+
+      function updateRadioPopup() {
+        const activeTrack = musicState.queue.find(
+          (track) => track.track_id === musicState.current_track_id
+        );
+        radioNowPlaying.textContent = activeTrack
+          ? `Now playing: ${activeTrack.title}`
+          : "No track selected.";
+        const duration = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
+        const remaining = duration ? Math.max(0, duration - (musicState.position || 0)) : 0;
+        radioRemaining.textContent = duration
+          ? `Time remaining: ${formatTime(remaining)}`
+          : "Time remaining: --";
+        radioPlaylist.innerHTML = musicState.queue
+          .map((track) => `<div>${track.title}</div>`)
+          .join("");
+      }
+
+      async function deriveKey(passphrase) {
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+          "raw",
+          encoder.encode(passphrase),
+          "PBKDF2",
+          false,
+          ["deriveKey"]
+        );
+        return crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: encoder.encode("cham-lobby-salt"),
+            iterations: 100000,
+            hash: "SHA-256",
+          },
+          keyMaterial,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["encrypt", "decrypt"]
+        );
+      }
+
+      function base64FromBuffer(buffer) {
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      }
+
+      function bufferFromBase64(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+      }
+
+      async function encryptMessage(message) {
+        const encoder = new TextEncoder();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await crypto.subtle.encrypt(
+          { name: "AES-GCM", iv },
+          encryptionKey,
+          encoder.encode(message)
+        );
+        return {
+          ciphertext: base64FromBuffer(ciphertext),
+          iv: base64FromBuffer(iv),
+        };
+      }
+
+      async function decryptMessage(ciphertext, iv) {
+        const decoder = new TextDecoder();
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: bufferFromBase64(iv) },
+          encryptionKey,
+          bufferFromBase64(ciphertext)
+        );
+        return decoder.decode(decrypted);
+      }
+
+      async function handleIncomingChat(payload) {
+        if (payload.encrypted) {
+          if (!encryptionKey) {
+            appendChatMessage({
+              ...payload,
+              message: "[Encrypted message - set a passphrase to read]",
+            });
+            return;
+          }
+          try {
+            const decrypted = await decryptMessage(payload.ciphertext, payload.iv);
+            appendChatMessage({ ...payload, message: decrypted });
+          } catch (error) {
+            appendChatMessage({
+              ...payload,
+              message: "[Encrypted message - unable to decrypt]",
+            });
+          }
+          return;
+        }
+        appendChatMessage(payload);
+      }
+
       joinUserButton.addEventListener("click", handleUserJoin);
       joinAdminButton.addEventListener("click", handleAdminJoin);
       sendMessageButton.addEventListener("click", sendChatMessage);
+      replyCancel.addEventListener("click", clearReplyTarget);
       chatMessage.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
@@ -1015,6 +1360,12 @@
         sendMusicCommand({ type: "music_pause" });
       });
 
+      timeline.addEventListener("change", () => {
+        if (currentRole === "admin") {
+          sendMusicCommand({ type: "music_seek", position: timeline.value });
+        }
+      });
+
       leaveChannelButton.addEventListener("click", leaveVoiceChannel);
 
       pttButton.addEventListener("mousedown", startTalking);
@@ -1031,6 +1382,71 @@
 
       micSelect.addEventListener("change", (event) => {
         requestMicrophone(event.target.value);
+      });
+
+      enableEncryptionButton.addEventListener("click", async () => {
+        const value = encryptionInput.value.trim();
+        if (!value) {
+          encryptionKey = null;
+          encryptionStatus.textContent = "Chat encryption is off.";
+          return;
+        }
+        encryptionKey = await deriveKey(value);
+        encryptionStatus.textContent = "Chat encryption is enabled.";
+      });
+
+      channelList.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        const target = event.target.closest(".user-pill");
+        if (!target) {
+          return;
+        }
+        if (target.dataset.radio) {
+          updateRadioPopup();
+          showPopup(radioPopup, event.clientX, event.clientY);
+          hidePopup(volumePopup);
+          return;
+        }
+        const userName = target.dataset.user;
+        if (!userName || userName === currentUserName) {
+          return;
+        }
+        activeVolumeTarget = userName;
+        const current = volumeMap.get(userName) ?? 100;
+        volumeSlider.value = current;
+        showPopup(volumePopup, event.clientX, event.clientY);
+        hidePopup(radioPopup);
+      });
+
+      volumeSlider.addEventListener("input", () => {
+        if (!activeVolumeTarget) {
+          return;
+        }
+        const value = Number(volumeSlider.value);
+        volumeMap.set(activeVolumeTarget, value);
+        const audio = remoteAudio.get(activeVolumeTarget);
+        if (audio) {
+          audio.volume = Math.min(value, 200) / 100;
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!volumePopup.contains(event.target)) {
+          hidePopup(volumePopup);
+        }
+        if (!radioPopup.contains(event.target)) {
+          hidePopup(radioPopup);
+        }
+      });
+
+      document.querySelectorAll(".drawer-toggle").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const targetId = button.dataset.target;
+          const panel = document.getElementById(targetId);
+          panel.classList.toggle("collapsed");
+          button.textContent = panel.classList.contains("collapsed") ? "▸" : "▾";
+        });
       });
 
       window.addEventListener("keydown", handleKeyDown);

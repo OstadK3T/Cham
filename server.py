@@ -253,18 +253,39 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             payload = json.loads(message_text)
             message_type = payload.get("type")
             if message_type == "chat":
-                text = str(payload.get("message", "")).strip()
-                if not text:
-                    continue
-                await manager.broadcast_chat(
-                    {
-                        "type": "chat",
-                        "name": name,
-                        "role": role,
-                        "message": text,
-                        "timestamp": current_time_label(),
-                    }
-                )
+                is_encrypted = bool(payload.get("encrypted", False))
+                reply_to = str(payload.get("reply_to", "")).strip() or None
+                if is_encrypted:
+                    ciphertext = str(payload.get("ciphertext", "")).strip()
+                    iv = str(payload.get("iv", "")).strip()
+                    if not ciphertext or not iv:
+                        continue
+                    await manager.broadcast_chat(
+                        {
+                            "type": "chat",
+                            "name": name,
+                            "role": role,
+                            "encrypted": True,
+                            "ciphertext": ciphertext,
+                            "iv": iv,
+                            "reply_to": reply_to,
+                            "timestamp": current_time_label(),
+                        }
+                    )
+                else:
+                    text = str(payload.get("message", "")).strip()
+                    if not text:
+                        continue
+                    await manager.broadcast_chat(
+                        {
+                            "type": "chat",
+                            "name": name,
+                            "role": role,
+                            "message": text,
+                            "reply_to": reply_to,
+                            "timestamp": current_time_label(),
+                        }
+                    )
                 continue
             if message_type == "voice_join":
                 channel = str(payload.get("channel", "")).strip()
