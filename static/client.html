@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cham Lobby</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #111827, #0b1120 45%, #020617 100%);
+        color: #e2e8f0;
+        margin: 0;
+        padding: 2rem;
+      }
+      .card {
+        max-width: 1280px;
+        margin: 0 auto;
+        background: rgba(15, 23, 42, 0.9);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 30px 60px rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        backdrop-filter: blur(18px);
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #cbd5f5;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      textarea {
+        resize: none;
+        min-height: 90px;
+      }
+      button {
+        margin-top: 1rem;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        color: #0f172a;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      button.secondary {
+        background: #1f2937;
+        color: #e2e8f0;
+      }
+      button:disabled {
+        background: #475569;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(56, 189, 248, 0.2);
+      }
+      .status {
+        margin-top: 1rem;
+        font-size: 0.95rem;
+      }
+      .error {
+        color: #f87171;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .layout-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: 1.1fr 1fr;
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
+      .panel {
+        background: #111827;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+      }
+      .drawer-toggle {
+        background: none;
+        border: none;
+        color: #cbd5f5;
+        font-size: 1.1rem;
+        padding: 0;
+        margin: 0;
+        width: auto;
+      }
+      .drawer-content {
+        margin-top: 1rem;
+      }
+      .drawer.collapsed .drawer-content {
+        display: none;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      li {
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #1f2937;
+      }
+      .chat {
+        margin-top: 0;
+      }
+      .chat-log {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+      }
+      .chat-bubble {
+        background: #1f2937;
+        border-radius: 16px;
+        padding: 0.6rem 0.9rem;
+        max-width: 100%;
+        width: fit-content;
+        animation: fadeIn 0.25s ease;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .chat-bubble.admin {
+        background: #1d4ed8;
+      }
+      .chat-bubble.system {
+        background: #334155;
+        font-style: italic;
+      }
+      .chat-bubble.reply-target {
+        border: 1px solid #f59e0b;
+        box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+      }
+      .chat-meta {
+        font-size: 0.75rem;
+        color: #cbd5f5;
+        margin-bottom: 0.2rem;
+      }
+      .chat-reply {
+        font-size: 0.7rem;
+        color: #fbbf24;
+        margin-bottom: 0.2rem;
+      }
+      .chat-message {
+        white-space: pre-wrap;
+      }
+      .chat-input {
+        margin-top: 1rem;
+      }
+      .reply-banner {
+        background: rgba(59, 130, 246, 0.15);
+        border-radius: 12px;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .reply-banner button {
+        width: auto;
+        margin: 0;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+      }
+      .reply-button {
+        border: none;
+        background: #0f172a;
+        color: #cbd5f5;
+        border-radius: 999px;
+        padding: 0.15rem 0.45rem;
+        margin-left: 0.35rem;
+        cursor: pointer;
+        font-size: 0.7rem;
+      }
+      .logs {
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+        font-size: 0.9rem;
+        color: #cbd5f5;
+      }
+      .badge {
+        display: inline-block;
+        background: #2563eb;
+        color: #e2e8f0;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        margin-left: 0.4rem;
+      }
+      .music-controls {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .music-row {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+      .playlist-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #1f2937;
+      }
+      .playlist-actions button {
+        margin: 0;
+        width: auto;
+        padding: 0.3rem 0.6rem;
+        border-radius: 8px;
+      }
+      .slider {
+        width: 100%;
+      }
+      .timeline {
+        display: grid;
+        gap: 0.5rem;
+      }
+      .timeline-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #94a3b8;
+      }
+      .channel-list {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .channel-card {
+        background: #0f172a;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .channel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+      .channel-users {
+        display: grid;
+        gap: 0.35rem;
+      }
+      .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        cursor: context-menu;
+      }
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #3b82f6;
+      }
+      .status-dot.talking {
+        background: #22c55e;
+      }
+      .status-dot.radio {
+        background: #f97316;
+      }
+      .ptt-row {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .ptt-button {
+        background: linear-gradient(135deg, #22c55e, #14b8a6);
+      }
+      .ptt-button.active {
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+      }
+      .popup {
+        position: fixed;
+        z-index: 40;
+        background: rgba(15, 23, 42, 0.85);
+        border-radius: 16px;
+        padding: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.4);
+        min-width: 200px;
+        animation: fadeIn 0.2s ease;
+      }
+      .popup h4 {
+        margin: 0 0 0.5rem;
+      }
+      .popup .playlist-mini {
+        max-height: 140px;
+        overflow-y: auto;
+        font-size: 0.8rem;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <section id="login-screen">
+        <h1>Cham Lobby</h1>
+        <p>Pick how you want to join.</p>
+        <div class="grid">
+          <div class="panel">
+            <h3>User login</h3>
+            <label for="user-name">Your name</label>
+            <input id="user-name" type="text" placeholder="Enter a name" />
+            <button id="join-user">Join as user</button>
+          </div>
+          <div class="panel">
+            <h3>Admin login</h3>
+            <label for="admin-name">Admin name</label>
+            <input id="admin-name" type="text" placeholder="Admin display name" />
+            <label for="admin-password">Admin password</label>
+            <input id="admin-password" type="password" placeholder="Password" />
+            <button id="join-admin" class="secondary">Join as admin</button>
+          </div>
+        </div>
+        <div class="status" id="status">Not connected.</div>
+      </section>
+
+      <section id="lobby-screen" class="hidden">
+        <h2>Lobby <span id="role-badge" class="badge hidden"></span></h2>
+        <div class="grid">
+          <div class="panel drawer" id="users-panel">
+            <div class="drawer-header">
+              <h3>Online users</h3>
+              <button class="drawer-toggle" data-target="users-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <ul id="user-list"></ul>
+            </div>
+          </div>
+          <div id="admin-panel" class="panel drawer hidden">
+            <div class="drawer-header">
+              <h3>Admin logs</h3>
+              <button class="drawer-toggle" data-target="admin-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="logs" id="log-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layout-grid" style="margin-top: 1.5rem">
+          <div class="panel drawer" id="voice-panel">
+            <div class="drawer-header">
+              <h3>Voice channels</h3>
+              <button class="drawer-toggle" data-target="voice-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="channel-list" id="channel-list"></div>
+              <button id="leave-channel" class="secondary">Leave channel</button>
+            </div>
+          </div>
+          <div class="panel drawer" id="ptt-panel">
+            <div class="drawer-header">
+              <h3>Push to talk</h3>
+              <button class="drawer-toggle" data-target="ptt-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="ptt-row">
+                <label for="ptt-key">PTT key binding</label>
+                <select id="ptt-key">
+                  <option value="v">V</option>
+                  <option value="b">B</option>
+                  <option value="space">Space</option>
+                </select>
+                <button id="ptt-button" class="ptt-button">Hold to talk</button>
+              </div>
+              <div class="ptt-row" style="margin-top: 1rem">
+                <h4>Microphone</h4>
+                <button id="mic-permission" class="secondary">Enable microphone</button>
+                <label for="mic-select">Input device</label>
+                <select id="mic-select"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layout-grid" style="margin-top: 1.5rem">
+          <div class="panel drawer hidden" id="radio-panel">
+            <div class="drawer-header">
+              <h3>Radio channel</h3>
+              <button class="drawer-toggle" data-target="radio-panel">▾</button>
+            </div>
+            <div class="drawer-content">
+              <div class="timeline">
+                <input id="timeline" type="range" min="0" max="0" value="0" class="slider" />
+                <div class="timeline-labels">
+                  <span id="current-time">0:00</span>
+                  <span id="duration">0:00</span>
+                </div>
+              </div>
+              <div style="margin-top: 1rem">
+                <h4>Playlist</h4>
+                <div id="playlist"></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel chat span-2">
+            <h3>Chat</h3>
+            <div class="chat-log" id="chat-log"></div>
+            <div class="chat-input">
+              <div class="reply-banner hidden" id="reply-banner">
+                <span id="reply-text"></span>
+                <button id="reply-cancel" class="secondary">Clear</button>
+              </div>
+              <label for="chat-message">Message</label>
+              <textarea
+                id="chat-message"
+                placeholder="Write a message... (Shift + Enter for new line)"
+              ></textarea>
+              <button id="send-message">Send message</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="music-admin" class="panel drawer hidden" style="margin-top: 1.5rem">
+          <div class="drawer-header">
+            <h3>Radio admin controls</h3>
+            <button class="drawer-toggle" data-target="music-admin">▾</button>
+          </div>
+          <div class="drawer-content">
+            <div class="music-controls" id="music-controls">
+              <div class="music-row">
+                <input id="track-url" type="text" placeholder="Paste .mp3 link" />
+                <button id="add-track" class="secondary">Add</button>
+              </div>
+              <label for="track-title">Track title (optional)</label>
+              <input id="track-title" type="text" placeholder="Name shown in playlist" />
+              <div class="music-row">
+                <button id="play-track">Play</button>
+                <button id="pause-track" class="secondary">Pause</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel drawer" id="security-panel" style="margin-top: 1.5rem">
+          <div class="drawer-header">
+            <h3>Security</h3>
+            <button class="drawer-toggle" data-target="security-panel">▾</button>
+          </div>
+          <div class="drawer-content">
+            <label for="encryption-key">End-to-end chat passphrase</label>
+            <input id="encryption-key" type="password" placeholder="Shared secret" />
+            <button id="enable-encryption" class="secondary">Enable encryption</button>
+            <div class="status" id="encryption-status">Chat encryption is off.</div>
+            <p style="font-size: 0.85rem; color: #94a3b8;">
+              Voice chat uses WebRTC (DTLS-SRTP) which encrypts media streams end-to-end by default.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <audio id="audio-player"></audio>
+    <div id="volume-popup" class="popup hidden">
+      <h4>Voice volume</h4>
+      <input id="volume-slider" type="range" min="0" max="200" value="100" />
+    </div>
+    <div id="radio-popup" class="popup hidden">
+      <h4>Radio bot</h4>
+      <div id="radio-now-playing"></div>
+      <div id="radio-remaining"></div>
+      <div class="playlist-mini" id="radio-playlist"></div>
+    </div>
+
+    <script>
+      const joinUserButton = document.getElementById("join-user");
+      const joinAdminButton = document.getElementById("join-admin");
+      const statusEl = document.getElementById("status");
+      const loginScreen = document.getElementById("login-screen");
+      const lobbyScreen = document.getElementById("lobby-screen");
+      const userList = document.getElementById("user-list");
+      const adminPanel = document.getElementById("admin-panel");
+      const logList = document.getElementById("log-list");
+      const chatLog = document.getElementById("chat-log");
+      const chatMessage = document.getElementById("chat-message");
+      const sendMessageButton = document.getElementById("send-message");
+      const roleBadge = document.getElementById("role-badge");
+      const trackUrlInput = document.getElementById("track-url");
+      const trackTitleInput = document.getElementById("track-title");
+      const addTrackButton = document.getElementById("add-track");
+      const playButton = document.getElementById("play-track");
+      const pauseButton = document.getElementById("pause-track");
+      const playlistEl = document.getElementById("playlist");
+      const timeline = document.getElementById("timeline");
+      const currentTimeLabel = document.getElementById("current-time");
+      const durationLabel = document.getElementById("duration");
+      const audioPlayer = document.getElementById("audio-player");
+      const channelList = document.getElementById("channel-list");
+      const leaveChannelButton = document.getElementById("leave-channel");
+      const pttButton = document.getElementById("ptt-button");
+      const pttKeySelect = document.getElementById("ptt-key");
+      const micPermissionButton = document.getElementById("mic-permission");
+      const micSelect = document.getElementById("mic-select");
+      const musicAdminPanel = document.getElementById("music-admin");
+      const radioPanel = document.getElementById("radio-panel");
+      const replyBanner = document.getElementById("reply-banner");
+      const replyText = document.getElementById("reply-text");
+      const replyCancel = document.getElementById("reply-cancel");
+      const encryptionInput = document.getElementById("encryption-key");
+      const enableEncryptionButton = document.getElementById("enable-encryption");
+      const encryptionStatus = document.getElementById("encryption-status");
+      const volumePopup = document.getElementById("volume-popup");
+      const volumeSlider = document.getElementById("volume-slider");
+      const radioPopup = document.getElementById("radio-popup");
+      const radioNowPlaying = document.getElementById("radio-now-playing");
+      const radioRemaining = document.getElementById("radio-remaining");
+      const radioPlaylist = document.getElementById("radio-playlist");
+
+      const voiceChannels = ["Voice 1", "Voice 2", "Voice 3", "Voice 4", "Radio Channel"];
+
+      let socket;
+      let currentRole = "user";
+      let currentUserName = "";
+      let currentChannel = null;
+      let isTalking = false;
+      let pttKey = "v";
+      let localStream = null;
+      let peerConnections = new Map();
+      let remoteAudio = new Map();
+      let volumeMap = new Map();
+      let activeVolumeTarget = null;
+
+      let musicState = {
+        queue: [],
+        current_track_id: null,
+        is_playing: false,
+        position: 0,
+        server_time: 0,
+      };
+      let syncTimer;
+      let replyToUser = null;
+      let encryptionKey = null;
+
+      function setStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle("error", isError);
+      }
+
+      function renderUsers(users) {
+        userList.innerHTML = "";
+        users.forEach((user) => {
+          const li = document.createElement("li");
+          const roleLabel = user.role === "admin" ? " (admin)" : "";
+          li.textContent = `${user.name}${roleLabel}`;
+          userList.appendChild(li);
+        });
+      }
+
+      function renderLogs(logs) {
+        logList.innerHTML = "";
+        logs.forEach((entry) => {
+          const line = document.createElement("div");
+          line.textContent = `${entry.timestamp} - ${entry.message}`;
+          logList.appendChild(line);
+        });
+        logList.scrollTop = logList.scrollHeight;
+      }
+
+      function setReplyTarget(userName) {
+        replyToUser = userName;
+        replyText.textContent = `Replying to ${userName}`;
+        replyBanner.classList.remove("hidden");
+      }
+
+      function clearReplyTarget() {
+        replyToUser = null;
+        replyBanner.classList.add("hidden");
+      }
+
+      function appendChatMessage(payload) {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("chat-bubble");
+        if (payload.role === "admin") {
+          wrapper.classList.add("admin");
+        }
+        if (payload.role === "system") {
+          wrapper.classList.add("system");
+        }
+        if (payload.reply_to && payload.reply_to === currentUserName) {
+          wrapper.classList.add("reply-target");
+        }
+
+        const meta = document.createElement("div");
+        meta.classList.add("chat-meta");
+        meta.textContent = `${payload.name} • ${payload.timestamp}`;
+
+        const replyLine = document.createElement("div");
+        replyLine.classList.add("chat-reply");
+        if (payload.reply_to) {
+          if (payload.reply_to === currentUserName) {
+            replyLine.textContent = `${payload.name} replied you`;
+          } else {
+            replyLine.textContent = `Replying to ${payload.reply_to}`;
+          }
+        }
+
+        const message = document.createElement("div");
+        message.classList.add("chat-message");
+        message.textContent = payload.message;
+
+        const actions = document.createElement("div");
+        const replyButton = document.createElement("button");
+        replyButton.classList.add("reply-button");
+        replyButton.textContent = "↩";
+        replyButton.addEventListener("click", () => setReplyTarget(payload.name));
+        actions.appendChild(replyButton);
+
+        wrapper.appendChild(meta);
+        if (payload.reply_to) {
+          wrapper.appendChild(replyLine);
+        }
+        wrapper.appendChild(message);
+        wrapper.appendChild(actions);
+        chatLog.appendChild(wrapper);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      function openLobby(role, users, logs) {
+        currentRole = role;
+        loginScreen.classList.add("hidden");
+        lobbyScreen.classList.remove("hidden");
+        roleBadge.textContent = role === "admin" ? "Admin" : "User";
+        roleBadge.classList.remove("hidden");
+        renderUsers(users || []);
+        if (role === "admin") {
+          adminPanel.classList.remove("hidden");
+          musicAdminPanel.classList.remove("hidden");
+          radioPanel.classList.remove("hidden");
+          timeline.disabled = false;
+          renderLogs(logs || []);
+        } else {
+          adminPanel.classList.add("hidden");
+          musicAdminPanel.classList.add("hidden");
+          radioPanel.classList.add("hidden");
+          timeline.disabled = true;
+        }
+      }
+
+      function connect(payload) {
+        setStatus("Connecting...");
+        joinUserButton.disabled = true;
+        joinAdminButton.disabled = true;
+
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const socketUrl = `${protocol}://${window.location.host}/ws`;
+        socket = new WebSocket(socketUrl);
+
+        socket.addEventListener("open", () => {
+          socket.send(JSON.stringify(payload));
+        });
+
+        socket.addEventListener("message", async (event) => {
+          const messagePayload = JSON.parse(event.data);
+          if (messagePayload.type === "error") {
+            setStatus(messagePayload.message, true);
+            joinUserButton.disabled = false;
+            joinAdminButton.disabled = false;
+            socket.close();
+            return;
+          }
+          if (messagePayload.type === "join_ack") {
+            setStatus("Connected!", false);
+            openLobby(messagePayload.role, messagePayload.users, messagePayload.logs);
+            updateMusicState(messagePayload);
+            updateVoiceState(messagePayload);
+          }
+          if (messagePayload.type === "users") {
+            renderUsers(messagePayload.users || []);
+          }
+          if (messagePayload.type === "logs" && currentRole === "admin") {
+            renderLogs(messagePayload.logs || []);
+          }
+          if (messagePayload.type === "chat") {
+            await handleIncomingChat(messagePayload);
+          }
+          if (messagePayload.type === "music_state") {
+            updateMusicState(messagePayload);
+          }
+          if (messagePayload.type === "voice_state") {
+            updateVoiceState(messagePayload);
+          }
+          if (messagePayload.type === "voice_offer") {
+            handleOffer(messagePayload.from, messagePayload.data);
+          }
+          if (messagePayload.type === "voice_answer") {
+            handleAnswer(messagePayload.from, messagePayload.data);
+          }
+          if (messagePayload.type === "voice_ice") {
+            handleIce(messagePayload.from, messagePayload.data);
+          }
+        });
+
+        socket.addEventListener("close", () => {
+          setStatus("Disconnected from server.", true);
+          stopSyncTimer();
+          cleanupVoice();
+        });
+
+        socket.addEventListener("error", () => {
+          setStatus("Connection error.", true);
+        });
+      }
+
+      function handleUserJoin() {
+        const name = document.getElementById("user-name").value.trim();
+        if (!name) {
+          setStatus("Please enter a name.", true);
+          return;
+        }
+        currentUserName = name;
+        connect({ type: "join", name, role: "user" });
+      }
+
+      function handleAdminJoin() {
+        const name = document.getElementById("admin-name").value.trim();
+        const password = document.getElementById("admin-password").value.trim();
+        if (!name) {
+          setStatus("Please enter an admin name.", true);
+          return;
+        }
+        if (!password) {
+          setStatus("Please enter the admin password.", true);
+          return;
+        }
+        currentUserName = name;
+        connect({ type: "join", name, role: "admin", password });
+      }
+
+      async function sendChatMessage() {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          setStatus("Not connected.", true);
+          return;
+        }
+        const message = chatMessage.value;
+        if (!message.trim()) {
+          return;
+        }
+
+        if (encryptionKey) {
+          const encrypted = await encryptMessage(message);
+          socket.send(
+            JSON.stringify({
+              type: "chat",
+              encrypted: true,
+              ciphertext: encrypted.ciphertext,
+              iv: encrypted.iv,
+              reply_to: replyToUser,
+            })
+          );
+        } else {
+          socket.send(JSON.stringify({ type: "chat", message, reply_to: replyToUser }));
+        }
+        chatMessage.value = "";
+        clearReplyTarget();
+      }
+
+      function sendMusicCommand(payload) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          setStatus("Not connected.", true);
+          return;
+        }
+        socket.send(JSON.stringify(payload));
+      }
+
+      function sendVoiceCommand(payload) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          setStatus("Not connected.", true);
+          return;
+        }
+        socket.send(JSON.stringify(payload));
+      }
+
+      function formatTime(seconds) {
+        const safe = Math.max(0, Math.floor(seconds));
+        const mins = Math.floor(safe / 60);
+        const secs = safe % 60;
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+      }
+
+      function renderPlaylist() {
+        playlistEl.innerHTML = "";
+        musicState.queue.forEach((track) => {
+          const row = document.createElement("div");
+          row.classList.add("playlist-item");
+          const name = document.createElement("span");
+          name.textContent = track.title;
+          row.appendChild(name);
+
+          const actions = document.createElement("div");
+          actions.classList.add("playlist-actions");
+
+          if (currentRole === "admin") {
+            const selectButton = document.createElement("button");
+            selectButton.textContent = track.track_id === musicState.current_track_id ? "Selected" : "Select";
+            selectButton.classList.add("secondary");
+            selectButton.addEventListener("click", () => {
+              sendMusicCommand({ type: "music_select", track_id: track.track_id });
+            });
+            actions.appendChild(selectButton);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () => {
+              sendMusicCommand({ type: "music_delete", track_id: track.track_id });
+            });
+            actions.appendChild(deleteButton);
+          }
+
+          row.appendChild(actions);
+          playlistEl.appendChild(row);
+        });
+      }
+
+      function updateAudioPlayer() {
+        const activeTrack = musicState.queue.find(
+          (track) => track.track_id === musicState.current_track_id
+        );
+        const shouldListen = currentChannel === "Radio Channel";
+
+        if (!activeTrack) {
+          audioPlayer.pause();
+          audioPlayer.removeAttribute("src");
+          audioPlayer.load();
+          timeline.max = 0;
+          timeline.value = 0;
+          currentTimeLabel.textContent = "0:00";
+          durationLabel.textContent = "0:00";
+          playButton.disabled = musicState.is_playing;
+          pauseButton.disabled = !musicState.is_playing;
+          return;
+        }
+
+        if (audioPlayer.src !== activeTrack.url) {
+          audioPlayer.src = activeTrack.url;
+        }
+
+        const desiredPosition = musicState.position || 0;
+        if (Number.isFinite(desiredPosition)) {
+          if (Math.abs(audioPlayer.currentTime - desiredPosition) > 0.5) {
+            audioPlayer.currentTime = desiredPosition;
+          }
+        }
+
+        if (musicState.is_playing && shouldListen) {
+          if (audioPlayer.paused) {
+            const playPromise = audioPlayer.play();
+            if (playPromise) {
+              playPromise.catch(() => {});
+            }
+          }
+        } else {
+          audioPlayer.pause();
+        }
+
+        playButton.disabled = musicState.is_playing;
+        pauseButton.disabled = !musicState.is_playing;
+      }
+
+      function updateTimelineUI() {
+        const duration = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
+        timeline.max = duration ? duration : 0;
+        durationLabel.textContent = formatTime(duration);
+
+        const shouldListen = currentChannel === "Radio Channel";
+        if (musicState.is_playing && shouldListen) {
+          timeline.value = audioPlayer.currentTime;
+          currentTimeLabel.textContent = formatTime(audioPlayer.currentTime);
+        } else {
+          timeline.value = musicState.position || 0;
+          currentTimeLabel.textContent = formatTime(musicState.position || 0);
+        }
+      }
+
+      function updateMusicState(payload) {
+        musicState = {
+          queue: payload.queue || [],
+          current_track_id: payload.current_track_id,
+          is_playing: payload.is_playing,
+          position: payload.position || 0,
+          server_time: payload.server_time || 0,
+        };
+        renderPlaylist();
+        updateAudioPlayer();
+        updateTimelineUI();
+        startSyncTimer();
+      }
+
+      function startSyncTimer() {
+        stopSyncTimer();
+        syncTimer = setInterval(() => {
+          updateTimelineUI();
+        }, 500);
+      }
+
+      function stopSyncTimer() {
+        if (syncTimer) {
+          clearInterval(syncTimer);
+          syncTimer = null;
+        }
+      }
+
+      function updateVoiceState(payload) {
+        const channels = payload.channels || {};
+        const talking = payload.talking || {};
+        channelList.innerHTML = "";
+
+        voiceChannels.forEach((channelName) => {
+          const users = channels[channelName] || [];
+          const card = document.createElement("div");
+          card.classList.add("channel-card");
+
+          const header = document.createElement("div");
+          header.classList.add("channel-header");
+
+          const title = document.createElement("span");
+          title.textContent = channelName;
+          header.appendChild(title);
+
+          const joinButton = document.createElement("button");
+          joinButton.textContent = currentChannel === channelName ? "Joined" : "Join";
+          joinButton.classList.add("secondary");
+          joinButton.disabled = currentChannel === channelName;
+          joinButton.addEventListener("click", () => {
+            joinVoiceChannel(channelName);
+          });
+          header.appendChild(joinButton);
+
+          card.appendChild(header);
+
+          const list = document.createElement("div");
+          list.classList.add("channel-users");
+          if (channelName === "Radio Channel") {
+            const bot = document.createElement("div");
+            bot.classList.add("user-pill");
+            bot.dataset.radio = "true";
+            const dot = document.createElement("span");
+            dot.classList.add("status-dot", "radio");
+            bot.appendChild(dot);
+            const label = document.createElement("span");
+            label.textContent = "Radio Bot";
+            bot.appendChild(label);
+            list.appendChild(bot);
+          }
+          users.forEach((userName) => {
+            const row = document.createElement("div");
+            row.classList.add("user-pill");
+            row.dataset.user = userName;
+            const dot = document.createElement("span");
+            dot.classList.add("status-dot");
+            if (talking[userName]) {
+              dot.classList.add("talking");
+            }
+            row.appendChild(dot);
+            const label = document.createElement("span");
+            label.textContent = userName;
+            row.appendChild(label);
+            list.appendChild(row);
+          });
+          card.appendChild(list);
+          channelList.appendChild(card);
+        });
+
+        currentChannel =
+          Object.keys(channels).find((channel) =>
+            (channels[channel] || []).includes(currentUserName)
+          ) || null;
+
+        updateAudioPlayer();
+        syncPeers(channels);
+      }
+
+      function joinVoiceChannel(channelName) {
+        currentChannel = channelName;
+        sendVoiceCommand({ type: "voice_join", channel: channelName });
+      }
+
+      function leaveVoiceChannel() {
+        currentChannel = null;
+        sendVoiceCommand({ type: "voice_leave" });
+        stopTalking();
+      }
+
+      async function requestMicrophone(deviceId = null) {
+        try {
+          const constraints = {
+            audio: deviceId ? { deviceId: { exact: deviceId } } : true,
+            video: false,
+          };
+          localStream = await navigator.mediaDevices.getUserMedia(constraints);
+          localStream.getAudioTracks().forEach((track) => {
+            track.enabled = false;
+          });
+          await refreshMicDevices();
+          await rebuildConnections();
+        } catch (error) {
+          setStatus("Microphone permission denied.", true);
+        }
+      }
+
+      async function refreshMicDevices() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputs = devices.filter((device) => device.kind === "audioinput");
+        micSelect.innerHTML = "";
+        inputs.forEach((device) => {
+          const option = document.createElement("option");
+          option.value = device.deviceId;
+          option.textContent = device.label || `Microphone ${micSelect.length + 1}`;
+          micSelect.appendChild(option);
+        });
+      }
+
+      function startTalking() {
+        if (!localStream || !currentChannel) {
+          return;
+        }
+        if (isTalking) {
+          return;
+        }
+        isTalking = true;
+        localStream.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+        });
+        pttButton.classList.add("active");
+        sendVoiceCommand({ type: "voice_talking", is_talking: true });
+      }
+
+      function stopTalking() {
+        if (!localStream) {
+          return;
+        }
+        if (!isTalking) {
+          return;
+        }
+        isTalking = false;
+        localStream.getAudioTracks().forEach((track) => {
+          track.enabled = false;
+        });
+        pttButton.classList.remove("active");
+        sendVoiceCommand({ type: "voice_talking", is_talking: false });
+      }
+
+      function handleKeyDown(event) {
+        const key = event.key.toLowerCase();
+        if ((pttKey === "space" && event.code === "Space") || key === pttKey) {
+          startTalking();
+        }
+      }
+
+      function handleKeyUp(event) {
+        const key = event.key.toLowerCase();
+        if ((pttKey === "space" && event.code === "Space") || key === pttKey) {
+          stopTalking();
+        }
+      }
+
+      function buildPeerConnection(peerName) {
+        const connection = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+
+        if (localStream) {
+          localStream.getTracks().forEach((track) => {
+            connection.addTrack(track, localStream);
+          });
+        }
+
+        connection.onicecandidate = (event) => {
+          if (event.candidate) {
+            sendVoiceCommand({ type: "voice_ice", target: peerName, data: event.candidate });
+          }
+        };
+
+        connection.ontrack = (event) => {
+          if (remoteAudio.has(peerName)) {
+            return;
+          }
+          const audio = document.createElement("audio");
+          audio.autoplay = true;
+          audio.srcObject = event.streams[0];
+          const volume = volumeMap.get(peerName) ?? 100;
+          audio.volume = Math.min(volume, 200) / 100;
+          remoteAudio.set(peerName, audio);
+        };
+
+        peerConnections.set(peerName, connection);
+        return connection;
+      }
+
+      async function createOffer(peerName) {
+        const connection = peerConnections.get(peerName) || buildPeerConnection(peerName);
+        const offer = await connection.createOffer();
+        await connection.setLocalDescription(offer);
+        sendVoiceCommand({ type: "voice_offer", target: peerName, data: offer });
+      }
+
+      async function handleOffer(peerName, offer) {
+        const connection = peerConnections.get(peerName) || buildPeerConnection(peerName);
+        await connection.setRemoteDescription(offer);
+        const answer = await connection.createAnswer();
+        await connection.setLocalDescription(answer);
+        sendVoiceCommand({ type: "voice_answer", target: peerName, data: answer });
+      }
+
+      async function handleAnswer(peerName, answer) {
+        const connection = peerConnections.get(peerName);
+        if (!connection) {
+          return;
+        }
+        await connection.setRemoteDescription(answer);
+      }
+
+      async function handleIce(peerName, candidate) {
+        const connection = peerConnections.get(peerName);
+        if (!connection || !candidate) {
+          return;
+        }
+        await connection.addIceCandidate(candidate);
+      }
+
+      function syncPeers(channels) {
+        if (!currentChannel) {
+          cleanupVoice();
+          return;
+        }
+        const usersInChannel = channels[currentChannel] || [];
+        const peers = usersInChannel.filter((name) => name !== currentUserName);
+
+        peers.forEach((peerName) => {
+          if (!peerConnections.has(peerName)) {
+            buildPeerConnection(peerName);
+            if (currentUserName < peerName) {
+              createOffer(peerName);
+            }
+          }
+        });
+
+        [...peerConnections.keys()].forEach((peerName) => {
+          if (!peers.includes(peerName)) {
+            closePeer(peerName);
+          }
+        });
+      }
+
+      async function rebuildConnections() {
+        const peers = [...peerConnections.keys()];
+        peers.forEach((peerName) => closePeer(peerName));
+      }
+
+      function closePeer(peerName) {
+        const connection = peerConnections.get(peerName);
+        if (connection) {
+          connection.close();
+        }
+        peerConnections.delete(peerName);
+        const audio = remoteAudio.get(peerName);
+        if (audio) {
+          audio.srcObject = null;
+        }
+        remoteAudio.delete(peerName);
+      }
+
+      function cleanupVoice() {
+        [...peerConnections.keys()].forEach((peerName) => closePeer(peerName));
+        stopTalking();
+      }
+
+      function showPopup(popup, x, y) {
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+        popup.classList.remove("hidden");
+      }
+
+      function hidePopup(popup) {
+        popup.classList.add("hidden");
+      }
+
+      function updateRadioPopup() {
+        const activeTrack = musicState.queue.find(
+          (track) => track.track_id === musicState.current_track_id
+        );
+        radioNowPlaying.textContent = activeTrack
+          ? `Now playing: ${activeTrack.title}`
+          : "No track selected.";
+        const duration = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
+        const remaining = duration ? Math.max(0, duration - (musicState.position || 0)) : 0;
+        radioRemaining.textContent = duration
+          ? `Time remaining: ${formatTime(remaining)}`
+          : "Time remaining: --";
+        radioPlaylist.innerHTML = musicState.queue
+          .map((track) => `<div>${track.title}</div>`)
+          .join("");
+      }
+
+      async function deriveKey(passphrase) {
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+          "raw",
+          encoder.encode(passphrase),
+          "PBKDF2",
+          false,
+          ["deriveKey"]
+        );
+        return crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: encoder.encode("cham-lobby-salt"),
+            iterations: 100000,
+            hash: "SHA-256",
+          },
+          keyMaterial,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["encrypt", "decrypt"]
+        );
+      }
+
+      function base64FromBuffer(buffer) {
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      }
+
+      function bufferFromBase64(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+      }
+
+      async function encryptMessage(message) {
+        const encoder = new TextEncoder();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await crypto.subtle.encrypt(
+          { name: "AES-GCM", iv },
+          encryptionKey,
+          encoder.encode(message)
+        );
+        return {
+          ciphertext: base64FromBuffer(ciphertext),
+          iv: base64FromBuffer(iv),
+        };
+      }
+
+      async function decryptMessage(ciphertext, iv) {
+        const decoder = new TextDecoder();
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: bufferFromBase64(iv) },
+          encryptionKey,
+          bufferFromBase64(ciphertext)
+        );
+        return decoder.decode(decrypted);
+      }
+
+      async function handleIncomingChat(payload) {
+        if (payload.encrypted) {
+          if (!encryptionKey) {
+            appendChatMessage({
+              ...payload,
+              message: "[Encrypted message - set a passphrase to read]",
+            });
+            return;
+          }
+          try {
+            const decrypted = await decryptMessage(payload.ciphertext, payload.iv);
+            appendChatMessage({ ...payload, message: decrypted });
+          } catch (error) {
+            appendChatMessage({
+              ...payload,
+              message: "[Encrypted message - unable to decrypt]",
+            });
+          }
+          return;
+        }
+        appendChatMessage(payload);
+      }
+
+      joinUserButton.addEventListener("click", handleUserJoin);
+      joinAdminButton.addEventListener("click", handleAdminJoin);
+      sendMessageButton.addEventListener("click", sendChatMessage);
+      replyCancel.addEventListener("click", clearReplyTarget);
+      chatMessage.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendChatMessage();
+        }
+      });
+
+      addTrackButton.addEventListener("click", () => {
+        const url = trackUrlInput.value.trim();
+        const title = trackTitleInput.value.trim();
+        if (!url) {
+          setStatus("Please provide an mp3 link.", true);
+          return;
+        }
+        sendMusicCommand({ type: "music_add", url, title });
+        trackUrlInput.value = "";
+        trackTitleInput.value = "";
+      });
+
+      playButton.addEventListener("click", () => {
+        sendMusicCommand({ type: "music_play" });
+      });
+
+      pauseButton.addEventListener("click", () => {
+        sendMusicCommand({ type: "music_pause" });
+      });
+
+      timeline.addEventListener("change", () => {
+        if (currentRole === "admin") {
+          sendMusicCommand({ type: "music_seek", position: timeline.value });
+        }
+      });
+
+      leaveChannelButton.addEventListener("click", leaveVoiceChannel);
+
+      pttButton.addEventListener("mousedown", startTalking);
+      pttButton.addEventListener("mouseup", stopTalking);
+      pttButton.addEventListener("mouseleave", stopTalking);
+
+      pttKeySelect.addEventListener("change", (event) => {
+        pttKey = event.target.value;
+      });
+
+      micPermissionButton.addEventListener("click", () => {
+        requestMicrophone();
+      });
+
+      micSelect.addEventListener("change", (event) => {
+        requestMicrophone(event.target.value);
+      });
+
+      enableEncryptionButton.addEventListener("click", async () => {
+        const value = encryptionInput.value.trim();
+        if (!value) {
+          encryptionKey = null;
+          encryptionStatus.textContent = "Chat encryption is off.";
+          return;
+        }
+        encryptionKey = await deriveKey(value);
+        encryptionStatus.textContent = "Chat encryption is enabled.";
+      });
+
+      channelList.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        const target = event.target.closest(".user-pill");
+        if (!target) {
+          return;
+        }
+        if (target.dataset.radio) {
+          updateRadioPopup();
+          showPopup(radioPopup, event.clientX, event.clientY);
+          hidePopup(volumePopup);
+          return;
+        }
+        const userName = target.dataset.user;
+        if (!userName || userName === currentUserName) {
+          return;
+        }
+        activeVolumeTarget = userName;
+        const current = volumeMap.get(userName) ?? 100;
+        volumeSlider.value = current;
+        showPopup(volumePopup, event.clientX, event.clientY);
+        hidePopup(radioPopup);
+      });
+
+      volumeSlider.addEventListener("input", () => {
+        if (!activeVolumeTarget) {
+          return;
+        }
+        const value = Number(volumeSlider.value);
+        volumeMap.set(activeVolumeTarget, value);
+        const audio = remoteAudio.get(activeVolumeTarget);
+        if (audio) {
+          audio.volume = Math.min(value, 200) / 100;
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!volumePopup.contains(event.target)) {
+          hidePopup(volumePopup);
+        }
+        if (!radioPopup.contains(event.target)) {
+          hidePopup(radioPopup);
+        }
+      });
+
+      document.querySelectorAll(".drawer-toggle").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const targetId = button.dataset.target;
+          const panel = document.getElementById(targetId);
+          panel.classList.toggle("collapsed");
+          button.textContent = panel.classList.contains("collapsed") ? "▸" : "▾";
+        });
+      });
+
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+
+      audioPlayer.addEventListener("loadedmetadata", updateTimelineUI);
+      audioPlayer.addEventListener("timeupdate", updateTimelineUI);
+    </script>
+  </body>
+</html>
