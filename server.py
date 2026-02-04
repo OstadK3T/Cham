@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List
@@ -24,47 +23,9 @@ class ClientSession:
 
 
 @dataclass
-class Track:
-    track_id: int
-    title: str
-    url: str
-
-
-@dataclass
-class MusicState:
-    queue: List[Track] = field(default_factory=list)
-    current_track_id: int | None = None
-    is_playing: bool = False
-    started_at: float | None = None
-    position: float = 0.0
-
-    def current_track(self) -> Track | None:
-        for track in self.queue:
-            if track.track_id == self.current_track_id:
-                return track
-        return None
-
-    def sync_position(self, now: float) -> float:
-        if self.is_playing and self.started_at is not None:
-            return max(0.0, now - self.started_at)
-        return max(0.0, self.position)
-
-    def to_payload(self, now: float) -> dict:
-        return {
-            "queue": [track.__dict__ for track in self.queue],
-            "current_track_id": self.current_track_id,
-            "is_playing": self.is_playing,
-            "position": self.sync_position(now),
-            "server_time": now,
-        }
-
-
-@dataclass
 class LobbyState:
     clients: Dict[str, ClientSession] = field(default_factory=dict)
     logs: List[dict] = field(default_factory=list)
-    music: MusicState = field(default_factory=MusicState)
-    _track_counter: int = 0
 
     def list_users(self) -> List[dict]:
         return [
@@ -88,10 +49,6 @@ class LobbyState:
     def list_admins(self) -> List[ClientSession]:
         return [session for session in self.clients.values() if session.role == "admin"]
 
-    def next_track_id(self) -> int:
-        self._track_counter += 1
-        return self._track_counter
-
 
 class ConnectionManager:
     def __init__(self, state: LobbyState) -> None:
@@ -110,11 +67,6 @@ class ConnectionManager:
     async def broadcast_logs(self) -> None:
         payload = {"type": "logs", "logs": self.state.logs}
         await self._broadcast_to_admins(payload)
-
-    async def broadcast_music(self) -> None:
-        now = time.time()
-        payload = {"type": "music_state", **self.state.music.to_payload(now)}
-        await self._broadcast(payload)
 
     async def send_error(self, websocket: WebSocket, message: str) -> None:
         payload = {"type": "error", "message": message}
@@ -142,10 +94,6 @@ def current_time_label() -> str:
 @app.get("/")
 async def index() -> FileResponse:
     return FileResponse("static/client.html")
-
-
-def create_track(title: str, url: str) -> Track:
-    return Track(track_id=lobby_state.next_track_id(), title=title, url=url)
 
 
 @app.websocket("/ws")
@@ -188,13 +136,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                     "role": role,
                     "users": lobby_state.list_users(),
                     "logs": lobby_state.logs,
-                    **lobby_state.music.to_payload(time.time()),
                 }
             )
         )
         await manager.broadcast_users()
         await manager.broadcast_logs()
-        await manager.broadcast_music()
         await manager.broadcast_chat(
             {
                 "type": "chat",
@@ -208,8 +154,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         while True:
             message_text = await websocket.receive_text()
             payload = json.loads(message_text)
-            message_type = payload.get("type")
-            if message_type == "chat":
+            if payload.get("type") == "chat":
                 text = str(payload.get("message", "")).strip()
                 if not text:
                     continue
@@ -222,73 +167,6 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                         "timestamp": current_time_label(),
                     }
                 )
-            if role != "admin":
-                continue
-            if message_type == "music_add":
-                url = str(payload.get("url", "")).strip()
-                title = str(payload.get("title", "")).strip() or "Untitled track"
-                if not url:
-                    continue
-                track = create_track(title, url)
-                lobby_state.music.queue.append(track)
-                lobby_state.add_log(f"{name} added track: {title}.")
-                if lobby_state.music.current_track_id is None:
-                    lobby_state.music.current_track_id = track.track_id
-                await manager.broadcast_music()
-                await manager.broadcast_logs()
-            if message_type == "music_delete":
-                track_id = int(payload.get("track_id", 0))
-                lobby_state.music.queue = [
-                    track for track in lobby_state.music.queue if track.track_id != track_id
-                ]
-                if lobby_state.music.current_track_id == track_id:
-                    lobby_state.music.current_track_id = (
-                        lobby_state.music.queue[0].track_id
-                        if lobby_state.music.queue
-                        else None
-                    )
-                    lobby_state.music.is_playing = False
-                    lobby_state.music.position = 0.0
-                    lobby_state.music.started_at = None
-                lobby_state.add_log(f"{name} removed a track from the playlist.")
-                await manager.broadcast_music()
-                await manager.broadcast_logs()
-            if message_type == "music_select":
-                track_id = int(payload.get("track_id", 0))
-                if any(track.track_id == track_id for track in lobby_state.music.queue):
-                    lobby_state.music.current_track_id = track_id
-                    lobby_state.music.is_playing = False
-                    lobby_state.music.position = 0.0
-                    lobby_state.music.started_at = None
-                    lobby_state.add_log(f"{name} selected a new track.")
-                    await manager.broadcast_music()
-                    await manager.broadcast_logs()
-            if message_type == "music_play":
-                if lobby_state.music.current_track_id is None:
-                    continue
-                now = time.time()
-                lobby_state.music.is_playing = True
-                lobby_state.music.started_at = now - lobby_state.music.position
-                lobby_state.add_log(f"{name} started playback.")
-                await manager.broadcast_music()
-                await manager.broadcast_logs()
-            if message_type == "music_pause":
-                now = time.time()
-                lobby_state.music.position = lobby_state.music.sync_position(now)
-                lobby_state.music.is_playing = False
-                lobby_state.music.started_at = None
-                lobby_state.add_log(f"{name} paused playback.")
-                await manager.broadcast_music()
-                await manager.broadcast_logs()
-            if message_type == "music_seek":
-                now = time.time()
-                new_position = float(payload.get("position", 0.0))
-                lobby_state.music.position = max(0.0, new_position)
-                if lobby_state.music.is_playing:
-                    lobby_state.music.started_at = now - lobby_state.music.position
-                lobby_state.add_log(f"{name} scrubbed the timeline.")
-                await manager.broadcast_music()
-                await manager.broadcast_logs()
     except WebSocketDisconnect:
         pass
     finally:

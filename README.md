@@ -1,25 +1,15 @@
 # Cham Lobby
 
-A real-time lobby built with FastAPI and WebSockets. Users open the web UI, pick a name, and see who else is online. Admins can log in to view server logs and control shared music playback in real time.
+A real-time lobby built with FastAPI and WebSockets. Users open the web UI, pick a name, and see who else is online. Admins can log in to view server logs in real time.
 
 ## Features
 - Web UI with real-time updates.
 - Duplicate name protection on the server.
 - Admin login with live server logs.
 - Real-time chat with system join/leave messages.
-- Shared music playlist and synced playback.
 - Simple architecture to extend with new features.
 
-## Getting started (Windows)
-
-```bat
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn server:app --reload
-```
-
-## Getting started (macOS/Linux)
+## Getting started
 
 ```bash
 python -m venv .venv
@@ -32,7 +22,7 @@ Open http://localhost:8000 in your browser.
 
 ## Admin login
 
-Use the admin password `admin` to sign in as an administrator. Admins can see the real-time logs panel and manage music playback.
+Use the admin password `admin` to sign in as an administrator. Admins can see the real-time logs panel.
 
 ## Deploying the client
 
